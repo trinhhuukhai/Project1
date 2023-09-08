@@ -13,8 +13,8 @@ public class Player : MonoBehaviour
     public Transform playerSkin;
 
 
-    private bool isMoving;
-    private bool isControl;
+    public bool isMoving;
+    public bool isControl;
     private Vector3 moveNextPoint;
     private Vector3 mouseDown, mouseUp;
     private List<Transform> playerBricks = new List<Transform>();
@@ -69,7 +69,8 @@ public class Player : MonoBehaviour
         isMoving = false;
         isControl = false;
         ClearBrick();
-        playerSkin.localPosition = transform.position;
+       
+        playerSkin.position = transform.position;
     }
 
     private Vector3 GetNextPoint(Direct direct)

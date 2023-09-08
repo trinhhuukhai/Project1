@@ -1,9 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
-using Unity.VisualScripting;
 using UnityEngine;
-
+using UnityEngine.UIElements;
 
 public enum GridValueType
 {
@@ -21,7 +19,7 @@ public class LevelManager : Singleton<LevelManager>
     public List<TextAsset> listLevel = new();
 
     private int currentLevelIndex = 0;
-
+    public Transform Map;
     private TextAsset currentLevelText;
 
     public Player player;
@@ -60,39 +58,7 @@ public class LevelManager : Singleton<LevelManager>
         return new Vector3(col, 0, row);
     }
 
-    public void CreateMap()
-    {
-        
-        if (currentLevelText == null)
-        {
-            return;
-        }
-
-        string[] lines = currentLevelText.text.Split('\n');
-       
-        for (int row = 0; row < lines.Length; row++)
-        {
-            string line = lines[row].Trim();
-          
-
-            for (int col = 0; col < line.Length; col++)
-            {
-                char cellChar = line[col];
-                int gridValue = int.Parse(cellChar.ToString());
-
-                // Convert grid coordinates to world coordinates
-                Vector3 position = GridToVector3(row, col);
-
-                // Instantiate the corresponding prefab based on gridValue
-                GameObject prefab = GetPrefabs(gridValue);
-
-                if (prefab != null)
-                {
-                    Instantiate(prefab, position, Quaternion.identity);
-                }
-            }
-        }
-    }
+    
 
     bool CheckLevelCompletionCondition()
     {
@@ -123,11 +89,19 @@ public class LevelManager : Singleton<LevelManager>
 
     public void LoadNextLevel()
     {
+        DestroyMap(); // Destroy the existing map
+
         int nextLevelIndex = currentLevelIndex + 1;
 
-        if (nextLevelIndex < listLevel.Count)
+        if (nextLevelIndex <= listLevel.Count)
         {
+            UIManager.Instance.mainmenu.SetActive(false);
+           
             LoadLevel(nextLevelIndex);
+            player.transform.position = Vector3.right * 4f;
+            player.OnInit(); // Reset the player
+            player.isControl = true;
+          
         }
         else
         {
@@ -137,14 +111,70 @@ public class LevelManager : Singleton<LevelManager>
 
     public void RetryLevel()
     {
+        DestroyMap(); // Destroy the existing map
+        UIManager.Instance.mainmenu.SetActive(false);
       
         LoadLevel(currentLevelIndex);
+        player.transform.position = Vector3.right * 4f;
+        player.OnInit(); // Reset the player
+        player.isControl = true;
+       
+
     }
+
+    public void CreateMap()
+    {
+        if (currentLevelText == null)
+        {
+            return;
+        }
+
+        string[] lines = listLevel[currentLevelIndex].text.Split('\n');
+
+        // Clear any existing map objects
+        foreach (Transform child in Map)
+        {
+            Destroy(child.gameObject);
+        }
+
+        for (int row = 0; row < lines.Length; row++)
+        {
+            string line = lines[row].Trim();
+
+            for (int col = 0; col < line.Length; col++)
+            {
+                char cellChar = line[col];
+                int gridValue = int.Parse(cellChar.ToString());
+
+                // Convert grid coordinates to world coordinates
+                Vector3 position = GridToVector3(row, col);
+
+                // Instantiate the corresponding prefab based on gridValue
+                GameObject prefab = GetPrefabs(gridValue);
+
+                if (prefab != null)
+                {
+                    // Instantiate the prefab as a child of the Map transform
+                    GameObject mapObject = Instantiate(prefab, position, Quaternion.identity);
+                    mapObject.transform.SetParent(Map);
+                }
+            }
+        }
+    }
+
+    private void DestroyMap()
+    {
+        // Clear any existing map objects
+        foreach (Transform child in Map)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
 
 
     public void OnInit()
     {
-        //player.transform.position = Vector3.zero;
         player.OnInit();
     }
 
